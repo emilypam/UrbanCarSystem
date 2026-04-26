@@ -1,0 +1,53 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["auth", "public"]
+}
+
+// Esquema AUTH (Mínimo necesario para la relación)
+model users {
+  id       String    @id @db.Uuid
+  email    String?   @db.VarChar(255)
+  usuarios usuarios?
+
+  @@schema("auth")
+}
+
+// Esquema PUBLIC (Tu lógica de UrbanCar)
+model usuarios {
+  usu_id         String          @id @db.Uuid
+  usu_email      String          @unique @db.VarChar(255)
+  usu_nombre     String?         @db.VarChar(100)
+  usu_created_at DateTime?       @default(now()) @db.Timestamptz(6)
+  usu_password   String?         @db.VarChar(255)
+
+  users         users           @relation(fields: [usu_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  usuario_roles usuario_roles[]
+
+  @@schema("public")
+}
+
+model roles_permisos {
+  rol_id          String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  rol_nombre      String          @unique @db.VarChar(50)
+  rol_descripcion String?
+  usuario_roles   usuario_roles[]
+
+  @@schema("public")
+}
+
+model usuario_roles {
+  usu_id         String         @db.Uuid
+  rol_id         String         @db.Uuid
+  roles_permisos roles_permisos @relation(fields: [rol_id], references: [rol_id], onDelete: Cascade)
+  usuarios       usuarios       @relation(fields: [usu_id], references: [usu_id], onDelete: Cascade)
+
+  @@id([usu_id, rol_id])
+  @@schema("public")
+}
