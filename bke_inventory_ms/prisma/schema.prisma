@@ -1,0 +1,81 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]  // <--- AGREGA ESTA LÍNEA
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "auth"]     // <--- ASEGÚRATE QUE ESTO ESTÉ AQUÍ
+}
+
+model marcas {
+  mar_id     String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  mar_nombre String    @unique @db.VarChar(50)
+  modelos    modelos[]
+}
+
+model categorias {
+  cat_id     String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  cat_nombre String      @unique @db.VarChar(50)
+  vehiculos  vehiculos[]
+}
+
+model tipos_combustible {
+  com_id     String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  com_nombre String      @unique @db.VarChar(30)
+  vehiculos  vehiculos[]
+}
+
+model tipos_transmision {
+  tra_id     String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tra_nombre String      @unique @db.VarChar(30)
+  vehiculos  vehiculos[]
+}
+
+model estados_vehiculo {
+  est_id     String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  est_nombre String      @unique @db.VarChar(30)
+  vehiculos  vehiculos[]
+}
+
+model modelos {
+  mod_id     String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  mar_id     String?     @db.Uuid
+  mod_nombre String      @db.VarChar(50)
+  marcas     marcas?     @relation(fields: [mar_id], references: [mar_id], onDelete: Cascade, onUpdate: NoAction)
+  vehiculos  vehiculos[]
+}
+
+model vehiculos {
+  veh_id          String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  mod_id          String?            @db.Uuid
+  cat_id          String?            @db.Uuid
+  com_id          String?            @db.Uuid
+  tra_id          String?            @db.Uuid
+  est_id          String?            @db.Uuid
+  veh_placa       String             @unique @db.VarChar(20)
+  veh_anio        Int
+  veh_color       String?            @db.VarChar(30)
+  veh_precio_dia  Decimal            @db.Decimal(10, 2)
+  veh_kilometraje Int                @default(0)
+  veh_created_at  DateTime?          @default(now()) @db.Timestamptz(6)
+
+  modelos           modelos?           @relation(fields: [mod_id], references: [mod_id], onUpdate: NoAction)
+  categorias        categorias?        @relation(fields: [cat_id], references: [cat_id], onUpdate: NoAction)
+  tipos_combustible tipos_combustible? @relation(fields: [com_id], references: [com_id], onUpdate: NoAction)
+  tipos_transmision tipos_transmision? @relation(fields: [tra_id], references: [tra_id], onUpdate: NoAction)
+  estados_vehiculo  estados_vehiculo?  @relation(fields: [est_id], references: [est_id], onUpdate: NoAction)
+  mantenimientos    mantenimientos[]
+}
+
+model mantenimientos {
+  man_id           String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  veh_id           String?    @db.Uuid
+  man_fecha        DateTime   @db.Date
+  man_descripcion  String
+  man_costo        Decimal?   @default(0) @db.Decimal(10, 2)
+  man_siguiente_km Int?
+
+  vehiculos vehiculos? @relation(fields: [veh_id], references: [veh_id], onDelete: Cascade, onUpdate: NoAction)
+}
